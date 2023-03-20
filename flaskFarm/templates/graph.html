@@ -1,1 +1,135 @@
+{% extends "layout.html" %}
 
+{% block title %}
+Graph
+{% endblock %}
+
+{% block main %}
+<div class="row ">
+    <!-- metric option -->
+    <div class="col-lg-3 col-md-3 col-sm-12">
+        <button class="metric-card rain" id="rainFall"><img src="../static/rainfall.png" alt="rainfall" type="submit"
+                height="50px">rainFall</button>
+    </div>
+    <div class="col-lg-3 col-md-3 col-sm-12">
+        <button class="metric-card temp" id="Temperature"><img src="../static/temp.png" alt="rainfall" type="submit"
+                height="80px">Temperature</button>
+    </div>
+    <div class="col-lg-3 col-md-3 col-sm-12">
+        <button class="metric-card ph" id="pH"><img src="../static/pH.png" alt="rainfall" type="submit" height="50px">
+            pH</button>
+    </div>
+    <div class="col-lg-3 col-md-3 col-sm-12">
+        <button class="metric-card farm"><img src="../static/farm.png" height="80px">{{ farm_name }}</button>
+    </div>
+
+    <!-- graph placeholder -->
+    <div class="col-*-12 ">
+        <canvas id="canvas" class="mt-3"></canvas>
+    </div>
+</div>
+
+<script>
+
+    // variable for "global" access
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'July', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const colors = ['#064635', '#519259', '#F0BB62', '#DB6B97', '#A6CF98', '#A2CDCD', '#7FC8A9', '#444941', '#19456B', '#FF9A8C',
+        '#335D2D', '#CBEAED', '#C4FB6D', '#ABC2E8', '#D9D7F1', '#FFBABA', '#FF5D6C', '#F7C5A8', '#A9C6DE', '#E4C666', '#CA965C',
+        '#FF6363', '#C3BA85', '#79A3B1', '#A8DDA8', '#FFBB91', '#BAC964', '#F7D08A'];
+    var myBarChart = null;
+
+
+    // function get random color
+    function getColor() {
+        const randomIndex = Math.floor(Math.random() * colors.length);
+        var randomCorlor = colors[randomIndex];
+        return randomCorlor;
+    }
+
+    // create bar chart 
+    function createBarChart() {
+        let ctx = document.getElementById('canvas').getContext('2d');
+        let typeChart = 'bar';
+        let myTitle = 'Temperature';
+        console.log("createBarChart");
+        myBarChart = new Chart(ctx, {
+            type: typeChart,
+            data: {
+                labels: months,
+                datasets: []
+            },
+            options: {
+                responsive: true,
+                legend: {
+                    position: 'bottom',
+                },
+                title: {
+                    display: true,
+                    text: ''
+                }
+            }
+        });
+    }
+
+    // update data to myBarChart datasets
+    function updateData(yearly_data) {
+        removeData(myBarChart);
+        years = Object.keys(yearly_data);
+        for (let year in yearly_data) {
+            metric_value = Object.values(yearly_data[year]);
+            myBarChart.data.datasets.push({ data: metric_value, label: year, backgroundColor: getColor() });
+            console.log(metric_value)
+            console.log(year)
+        }
+        myBarChart.update();
+    }
+
+    // Remove data from 'old' myBarChart datasets to update the new ones
+    function removeData(myChart) {
+        console.log('removeData', myChart);
+        if (myChart.data.datasets.length > 0) {
+            myChart.data.datasets = [];
+            myChart.update();
+        }
+    }
+
+    // Create myBarChart when loading window
+    window.onload = function () {
+        createBarChart();
+    };
+
+    // Get data from API according to button being clicked
+    // 3 button for 3 metric_type: pH, temperature, rainfall
+    // Temperature
+    document.getElementById("Temperature").onclick = function () {
+        fetch(document.location.origin + '/temperature')
+            .then(res => res.json())
+            .then((out) => {
+                console.log('Output: ', out);
+                myBarChart.options.title.text = 'Temperature bar chart (by monthly min, max values)';
+                updateData(out);
+            }).catch(err => console.error(err));
+    };
+    // pH
+    document.getElementById("pH").onclick = function () {
+        fetch(document.location.origin + '/ph')
+            .then(res => res.json())
+            .then((out) => {
+                console.log('Output: ', out);
+                myBarChart.options.title.text = 'pH bar chart (by monthly min, max values)';
+                updateData(out);
+            }).catch(err => console.error(err));
+    };
+    // rainFall
+    document.getElementById("rainFall").onclick = function () {
+        fetch(document.location.origin + '/rainfall')
+            .then(res => res.json())
+            .then((out) => {
+                console.log('Output: ', out);
+                myBarChart.options.title.text = 'Rain fall bar chart (by monthly min, max values)';
+                updateData(out);
+            }).catch(err => console.error(err));
+    };
+
+</script>
+{% endblock %}
